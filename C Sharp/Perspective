@@ -1,0 +1,133 @@
+public class Prospective_Controller : MonoBehaviour
+{
+    [SerializeField]
+    private Text _fps;
+    [SerializeField]
+    GameObject soundManager;
+    [SerializeField]
+    private LayerMask targetMask;
+    [SerializeField]
+    private LayerMask ignoretargetMask;
+    [SerializeField]
+    private float maxDistance, offsetFactor;
+    [SerializeField]
+    private Text sizeText;
+    [SerializeField]
+    private GameObject objPositioner;
+
+    private Transform target;
+    private GameObject obj;
+    private float originalDistance, originalScale, Distance;
+    private Vector3 targetScale;
+    public static bool grabbed = false;
+
+    private float _timer;
+    private float _hudRefreshRate = 1f;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        HandleInput();
+        ResizeTarget();
+        GrabItem();
+        if (Time.unscaledTime > _timer)
+        {
+            int fps = (int)(1f / Time.unscaledDeltaTime);
+            _fps.text = "FPS: " + fps;
+            _timer = Time.unscaledTime + _hudRefreshRate;
+        }
+    }
+
+
+
+    private void HandleInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            if (target == null)
+            {
+                RaycastHit hit;
+                if (Physics.Raycast(transform.position, transform.forward, out hit, Mathf.Infinity, targetMask))
+                {
+                    target = hit.transform;
+                    target.GetComponent<Rigidbody>().isKinematic = true;
+                    SoundManger.grb = true;
+                    originalDistance = Vector3.Distance(transform.position, target.position);
+                    originalScale = target.localScale.x;
+                    targetScale = target.localScale;
+                }
+            }
+            else
+            {
+                target.GetComponent<Rigidbody>().isKinematic = false;
+                target.GetComponent<Rigidbody>().useGravity = true;
+                target = null;
+            }
+        }
+    }
+
+    private void ResizeTarget()
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, transform.forward, out hit, Mathf.Infinity, ignoretargetMask))
+        {
+            target.position = hit.point - transform.forward * offsetFactor * targetScale.x;
+            float currentDistance = Vector3.Distance(transform.position, target.position);
+            float s = currentDistance / originalDistance;
+            targetScale.x = targetScale.y = targetScale.z = s;
+
+            target.localScale = targetScale * originalScale;
+            sizeText.text = target.localScale.x.ToString();
+        }
+    }
+
+    private void GrabItem()
+    {
+        RaycastHit hit2;
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            if (grabbed == false)
+            {
+                if (Physics.Raycast(transform.position, transform.forward, out hit2, maxDistance, targetMask) && hit2.transform.GetComponent<Rigidbody>())
+                {
+                    obj = hit2.transform.gameObject;
+                    obj.GetComponent<Rigidbody>().useGravity = false;
+                    grabbed = true;
+                    SoundManger.grb = true;
+                }
+            }
+            else
+            {
+                if (obj != null)
+                {
+                    obj.GetComponent<Rigidbody>().freezeRotation = false;
+                    obj.GetComponent<Rigidbody>().useGravity = true;
+                    obj.transform.parent = GameObject.Find("Level_3").transform;
+                    grabbed = false;
+                    obj = null;
+                }
+            }
+        }
+        if (obj != null)
+        {
+            obj.transform.parent = transform;
+            obj.transform.position = objPositioner.transform.position;
+        }
+        if (grabbed == true)
+        {
+            obj.GetComponent<Rigidbody>().velocity = Vector3.zero;
+            obj.GetComponent<Rigidbody>().freezeRotation = true;
+        }
+    }
+}
