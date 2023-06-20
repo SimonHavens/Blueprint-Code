@@ -1,0 +1,168 @@
+public class PortalTeleporter : MonoBehaviour
+{
+	[SerializeField]
+	private GameObject Q, SizeCounter;
+	[SerializeField]
+	public Transform player;
+	public Transform reciever;
+	public static bool telestop = false;
+	public bool Lv3fix = false;
+	[SerializeField]
+	private GameObject[] Livelli;
+
+	private bool playerIsOverlapping = false;
+
+	public enum Levels {Lv0, Lv1, Lv2, Lv3, Lv4, LvNull}
+	public Levels level;
+
+    void Start()
+    {
+		if (SizeCounter == null)
+		{
+			return;
+		}
+		else
+		{
+			if (Lv3fix == true)
+			{
+				SizeCounter.SetActive(false);
+			}
+		}
+		if (Q == null)
+		{
+			return;
+		}
+		else
+		{
+			if (Lv3fix == true)
+			{
+				Q.SetActive(false);
+			}
+		}
+	}
+
+    // Update is called once per frame
+    void Update()
+	{
+		if (playerIsOverlapping)
+		{
+			Vector3 portalToPlayer = player.position - transform.position;
+			float dotProduct = Vector3.Dot(transform.up, portalToPlayer);
+
+			// If this is true: The player has moved across the portal
+			if (dotProduct < 2f)
+			{
+				// Teleport him!
+				float rotationDiff = -Quaternion.Angle(transform.rotation, reciever.rotation);
+				rotationDiff += 180;
+				player.Rotate(Vector3.up, rotationDiff);
+
+				Vector3 positionOffset = Quaternion.Euler(0f, rotationDiff, 0f) * portalToPlayer;
+				player.position = reciever.position + positionOffset + new Vector3(0.1f, 0, 0);
+
+				playerIsOverlapping = false;
+				telestop = true;
+				LevelOccluder();
+				Qenabler();
+			}
+		}
+		if (Livelli == null)
+		{
+			return;
+		}
+	}
+
+	private void LevelOccluder()
+	{
+		if (level == Levels.Lv0)
+		{
+			
+			Livelli[0].SetActive(true);
+			if (Pedestal.T1 == true)
+			{
+				Livelli[1].SetActive(true);
+			}
+			if (Pedestal.T2 == true)
+			{
+				Livelli[2].SetActive(true);
+			}
+			if (Pedestal.T3 == true)
+			{
+				Livelli[3].SetActive(true);
+			}
+		}
+		else if (level == Levels.Lv1)
+		{
+			if (Pedestal.T1 == true)
+			{
+				Livelli[1].SetActive(false);
+			}
+			if (Pedestal.T2 == true)
+			{
+				Livelli[2].SetActive(false);
+			}
+			if (Pedestal.T3 == true)
+			{
+				Livelli[3].SetActive(false);
+			}
+		}
+		else if (level == Levels.Lv2)
+		{
+			Livelli[0].SetActive(false);
+			if (Pedestal.T2 == true)
+			{
+				Livelli[2].SetActive(false);
+			}
+			if (Pedestal.T3 == true)
+			{
+				Livelli[3].SetActive(false);
+			}
+		}
+		else if (level == Levels.Lv3)
+		{
+			Livelli[0].SetActive(false);
+			Livelli[1].SetActive(false);
+			if (Pedestal.T3 == true)
+			{
+				Livelli[3].SetActive(false);
+			}
+			SizeCounter.SetActive(true);
+			Q.SetActive(true);
+		}
+		else if (level == Levels.Lv4)
+		{
+			Livelli[0].SetActive(false);
+			Livelli[1].SetActive(false);
+			Livelli[2].SetActive(false);
+		}
+		else if (level == Levels.LvNull)
+		{
+			return;
+		}
+	}
+
+	private void Qenabler()
+    {
+		if (level == Levels.Lv3)
+		{
+			SizeCounter.SetActive(true);
+			Q.SetActive(true);
+		}
+	}
+
+	void OnTriggerEnter(Collider other)
+	{
+		if (other.tag == "Player" && telestop == false)
+		{
+			playerIsOverlapping = true;
+		}
+	}
+
+	void OnTriggerExit(Collider other)
+	{
+		if (other.tag == "Player")
+		{
+			playerIsOverlapping = false;
+		}
+	}
+}
